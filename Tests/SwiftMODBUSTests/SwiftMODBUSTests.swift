@@ -7,7 +7,7 @@ class
 SwiftMODBUSTests: XCTestCase
 {
 	func
-	testExample()
+	testAlicat()
 		throws
 	{
 		do
@@ -50,5 +50,26 @@ SwiftMODBUSTests: XCTestCase
 			print("Err: \(e)")
 			throw e
 		}
+	}
+	
+	func
+	testEurotherm()
+		throws
+	{
+		let ctx = try MBContext(port: "/dev/tty.usbserial-A600euQU", baud: 19200)
+		ctx.debug = false
+		ctx.deviceID = 6
+		try ctx.connect()
+		
+		var v = try ctx.readRegister(address: 1)
+		print("PV: \(v)")
+		
+		v = try ctx.readRegister(address: 2)
+		print("TargetSP: \(v)")
+		
+		try ctx.write(address: 24, values: [20])
+		
+		v = try ctx.readRegister(address: 2)
+		print("TargetSP: \(v)")
 	}
 }
