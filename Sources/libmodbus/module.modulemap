@@ -1,0 +1,5 @@
+module libmodbus
+{
+	umbrella header "libmodbus.h"
+	link "modbus"
+}	
