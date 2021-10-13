@@ -25,12 +25,22 @@ MBContext
 		case odd
 	}
 	
+	/**
+		Creates a MODBUS context representing a single bus connected to a system serial port.
+		
+		- Parameters:
+			
+			- port:		The POSIX filesystem path to the MODBUS RTU (serial) port.
+			- queue:	The queue on which completion closures are called. Defaults to the main queue.
+	*/
+	
 	public
 	init(port inPort: String,
 			baud inBaud: Int = 115200,
 			parity inParity: Parity = .none,
 			wordSize inWordSize: Int = 8,
-			stopBits inStopBits: Int = 1)
+			stopBits inStopBits: Int = 1,
+			queue inQueue: DispatchQueue = .main)
 		throws
 	{
 		self.ctx = modbus_new_rtu(inPort, Int32(inBaud), inParity.charValue, Int32(inWordSize), Int32(inStopBits))
@@ -38,6 +48,9 @@ MBContext
 		{
 			throw MBError(errno: errno)
 		}
+		
+		self.workQ = DispatchQueue(label: "Modbus \(inPort)", qos: .userInitiated)
+		self.callbackQ = inQueue
 	}
 	
 	deinit
@@ -57,11 +70,56 @@ MBContext
 		{
 			throw MBError(errno: errno)
 		}
-		
-		
 	}
 	
+	/**
+		Asynchronously read the `UInt16` at ``inAddr`` from ``inDeviceID``
+	*/
+	
 	public
+	func
+	readRegister(address inAddr: Int, fromDevice inDeviceID: Int, completion inCompletion: @escaping (UInt16?, Error?) -> ())
+	{
+		self.workQ.async
+		{
+			do
+			{
+				self.deviceID = inDeviceID
+				let r = try self.readRegister(address: inAddr)
+				self.callbackQ.async { inCompletion(r, nil) }
+			}
+			
+			catch (let e)
+			{
+				self.callbackQ.async { inCompletion(nil, e) }
+			}
+		}
+	}
+	
+	/**
+		Asynchronously read ``inCount`` `UInt16s` at ``inAddr`` from ``inDeviceID``.
+	*/
+	
+	public
+	func
+	readRegisters(address inAddr: Int, count inCount: Int, fromDevice inDeviceID: Int, completion inCompletion: @escaping ([UInt16]?, Error?) -> ())
+	{
+		self.workQ.async
+		{
+			do
+			{
+				self.deviceID = inDeviceID
+				let r = try self.readRegisters(address: inAddr, count: inCount)
+				self.callbackQ.async { inCompletion(r, nil) }
+			}
+			
+			catch (let e)
+			{
+				self.callbackQ.async { inCompletion(nil, e) }
+			}
+		}
+	}
+	
 	func
 	readRegister(address inAddr: Int)
 		throws
@@ -81,7 +139,6 @@ MBContext
 		return v
 	}
 	
-	public
 	func
 	readRegisters(address inAddr: Int, count inCount: Int)
 		throws
@@ -101,7 +158,6 @@ MBContext
 		return v
 	}
 	
-	public
 	func
 	read(address inAddr: Int)
 		throws
@@ -121,7 +177,6 @@ MBContext
 		return r
 	}
 	
-	public
 	func
 	write(address inAddr: Int, values inVals: [UInt16])
 		throws
@@ -134,7 +189,6 @@ MBContext
 		}
 	}
 	
-	public
 	func
 	write(address inAddr: Int, value inVal: Float)
 		throws
@@ -144,7 +198,6 @@ MBContext
 		try write(address: inAddr, values: word)
 	}
 	
-	public
 	var
 	deviceID: Int
 	{
@@ -199,7 +252,9 @@ MBContext
 		}
 	}
 	
-	let			ctx				:	OpaquePointer!
+	let		ctx					:	OpaquePointer!
+	let		workQ				:	DispatchQueue
+	let		callbackQ			:	DispatchQueue
 }
 
 

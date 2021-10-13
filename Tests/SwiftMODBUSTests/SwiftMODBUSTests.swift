@@ -71,5 +71,9 @@ SwiftMODBUSTests: XCTestCase
 		
 		v = try ctx.readRegister(address: 2)
 		print("TargetSP: \(v)")
+		
+		v = try ctx.readRegister(address: 107)
+		print("Version: \(v)")
+		
 	}
 }
