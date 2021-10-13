@@ -121,6 +121,25 @@ MBContext
 	}
 	
 	func
+	read(address inAddr: Int, fromDevice inDeviceID: Int, completion inCompletion: @escaping (Float?, Error?) -> ())
+	{
+		self.workQ.async
+		{
+			do
+			{
+				self.deviceID = inDeviceID
+				let r: Float = try self.read(address: inAddr)
+				self.callbackQ.async { inCompletion(r, nil) }
+			}
+			
+			catch (let e)
+			{
+				self.callbackQ.async { inCompletion(nil, e) }
+			}
+		}
+	}
+	
+	func
 	readRegister(address inAddr: Int)
 		throws
 		-> UInt16

@@ -76,4 +76,60 @@ SwiftMODBUSTests: XCTestCase
 		print("Version: \(v)")
 		
 	}
+	
+	func
+	testAsync()
+		throws
+	{
+		let exp = XCTestExpectation()
+		exp.expectedFulfillmentCount = 3
+		
+		let ctx = try MBContext(port: "/dev/tty.usbserial-A600euQU", baud: 19200)
+		ctx.deviceID = 6
+		try ctx.connect()
+		
+		ctx.readRegister(address: 1, fromDevice: 6)
+		{ inResult, inError in
+			XCTAssertNil(inError)
+			XCTAssertNotNil(inResult)
+			if let e = inError
+			{
+				print("Error: \(e)")
+				return
+			}
+			
+			print("PV: \(inResult!)")
+			exp.fulfill()
+		}
+		
+		ctx.readRegister(address: 4, fromDevice: 6)
+		{ inResult, inError in
+			XCTAssertNil(inError)
+			XCTAssertNotNil(inResult)
+			if let e = inError
+			{
+				print("Error: \(e)")
+				return
+			}
+			
+			print("Out: \(inResult!)")
+			exp.fulfill()
+		}
+		
+		ctx.read(address: 4, fromDevice: 6)			//	TODO: This MODBUS register is not float
+		{ (inResult: Float?, inError: Error?) in
+			XCTAssertNil(inError)
+			XCTAssertNotNil(inResult)
+			if let e = inError
+			{
+				print("Error: \(e)")
+				return
+			}
+			
+			print("PV: \(inResult!)")
+			exp.fulfill()
+		}
+		
+		wait(for: [exp], timeout: 10)
+	}
 }
