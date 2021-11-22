@@ -14,7 +14,7 @@ import Foundation
 
 public
 class
-MBContext
+MODBUSContext
 {
 	public
 	enum
@@ -75,6 +75,33 @@ MBContext
 	/**
 		Asynchronously read the `UInt16` at ``inAddr`` from ``inDeviceID``
 	*/
+	
+	@available(macOS 12.0.0, *)
+	public
+	func
+	readRegister(address inAddr: Int, fromDevice inDeviceID: Int)
+		async
+		throws
+		-> UInt16
+	{
+		try await withCheckedThrowingContinuation
+		{ inCont in
+			self.workQ.async
+			{
+				do
+				{
+					self.deviceID = inDeviceID
+					let r = try self.readRegister(address: inAddr)
+					inCont.resume(returning: r)
+				}
+				
+				catch (let e)
+				{
+					inCont.resume(throwing: e)
+				}
+			}
+		}
+	}
 	
 	public
 	func
@@ -151,9 +178,13 @@ MBContext
 		
 		var v: UInt16 = 0
 		let rc = modbus_read_registers(self.ctx, Int32(inAddr), 1, &v)
-		if rc != 1
+		if rc == -1
 		{
 			throw MBError(errno: errno)
+		}
+		else if rc != 1
+		{
+			throw MBError.unexpectedReturnedRegisterCount(Int(rc))
 		}
 		return v
 	}
@@ -170,9 +201,13 @@ MBContext
 		
 		var v = [UInt16](repeating: 0, count: inCount)
 		let rc = modbus_read_registers(self.ctx, Int32(inAddr), Int32(inCount), &v)
-		if rc != inCount
+		if rc == -1
 		{
 			throw MBError(errno: errno)
+		}
+		else if rc != inCount
+		{
+			throw MBError.unexpectedReturnedRegisterCount(Int(rc))
 		}
 		return v
 	}
@@ -278,7 +313,7 @@ MBContext
 
 
 extension
-MBContext.Parity
+MODBUSContext.Parity
 {
 	var
 	charValue: CChar
@@ -293,7 +328,7 @@ MBContext.Parity
 }
 
 extension
-MBContext.SerialMode
+MODBUSContext.SerialMode
 {
 	var
 	intValue: Int32
@@ -312,6 +347,10 @@ MBError : Error
 {
 	case unknown(Int)
 	case deviceIDNotSet
+	case unexpectedReturnedRegisterCount(Int)
+	case timeout
+	
+	//	libmodbus errors
 	
 	case invalidFunction
 	case invalidAddress
@@ -330,6 +369,7 @@ MBError : Error
 	case unknownExeceptionCode
 	case dataOverflow		//	Too many bytes returned
 	case badServer			//	Response not from requested device
+	
 	
 	init(errno inErr: Int32)
 	{
@@ -353,6 +393,9 @@ MBError : Error
 			case Int32(kErrorBase + 15):	self = .unknownExeceptionCode
 			case Int32(kErrorBase + 16):	self = .dataOverflow
 			case Int32(kErrorBase + 17):	self = .badServer
+			
+			case Int32(ETIMEDOUT):			self = .timeout
+			
 			default:						self = .unknown(Int(inErr))
 		}
 	}

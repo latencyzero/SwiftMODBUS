@@ -1,28 +1,21 @@
 //
-//  Eurotherm.swift
+//  Alicat.swift
 //  
 //
-//  Created by Rick Mann on 2021-10-13.
+//  Created by Rick Mann on 2021-10-23.
 //
 
 import Foundation
 
 
-public
+
 class
-Eurotherm
+Alicat
 {
-	public
 	init(modbus inBus: MODBUSContext, deviceID inDeviceID: Int)
 	{
 		self.bus = inBus
 		self.deviceID = inDeviceID
-	}
-	
-	public
-	func
-	getVersion()
-	{
 	}
 	
 	let		bus					:	MODBUSContext

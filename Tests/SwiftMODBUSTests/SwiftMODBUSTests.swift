@@ -12,7 +12,7 @@ SwiftMODBUSTests: XCTestCase
 	{
 		do
 		{
-			let ctx = try MBContext(port: "/dev/tty.usbserial-AO004DTP", baud: 19200)
+			let ctx = try MODBUSContext(port: "/dev/tty.usbserial-AO004DTP", baud: 19200)
 			ctx.debug = true
 			ctx.deviceID = 1
 			try ctx.connect()
@@ -56,7 +56,7 @@ SwiftMODBUSTests: XCTestCase
 	testEurotherm()
 		throws
 	{
-		let ctx = try MBContext(port: "/dev/tty.usbserial-A600euQU", baud: 19200)
+		let ctx = try MODBUSContext(port: "/dev/tty.usbserial-A600euQU", baud: 19200)
 		ctx.debug = false
 		ctx.deviceID = 6
 		try ctx.connect()
@@ -77,14 +77,29 @@ SwiftMODBUSTests: XCTestCase
 		
 	}
 	
+	@available(macOS 12.0.0, *)
 	func
 	testAsync()
+		async
+		throws
+	{
+//		let ctx = try MODBUSContext(port: "/dev/tty.usbserial-A600euQU", baud: 19200)		//	Addr 6
+		let ctx = try MODBUSContext(port: "/dev/tty.usbserial-AK05M8LO", baud: 19200)		//	Addr 7
+		ctx.deviceID = 6
+		try ctx.connect()
+		
+		let result = try await ctx.readRegister(address: 1, fromDevice: 6)
+		print("PV: \(result)")
+	}
+	
+	func
+	testAsyncClosures()
 		throws
 	{
 		let exp = XCTestExpectation()
 		exp.expectedFulfillmentCount = 3
 		
-		let ctx = try MBContext(port: "/dev/tty.usbserial-A600euQU", baud: 19200)
+		let ctx = try MODBUSContext(port: "/dev/tty.usbserial-A600euQU", baud: 19200)
 		ctx.deviceID = 6
 		try ctx.connect()
 		

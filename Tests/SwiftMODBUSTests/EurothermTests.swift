@@ -10,7 +10,7 @@ EurothermTests: XCTestCase
 	testWriteProgram()
 		throws
 	{
-		let bus = try MBContext(port: "", baud: 19200)
+		let bus = try MODBUSContext(port: "", baud: 19200)
 		let cont = try Eurotherm(modbus: bus, deviceID: 6)
 		
 //		cont.getVersion
