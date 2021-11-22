@@ -2,6 +2,11 @@ import XCTest
 @testable import SwiftMODBUS
 
 
+//fileprivate let	kPort				=	"/dev/tty.usbserial-AO004DTP"
+fileprivate let	kPort				=	"/dev/tty.usbserial-AK05M8LO"
+
+
+
 final
 class
 SwiftMODBUSTests: XCTestCase
@@ -12,7 +17,7 @@ SwiftMODBUSTests: XCTestCase
 	{
 		do
 		{
-			let ctx = try MODBUSContext(port: "/dev/tty.usbserial-AO004DTP", baud: 19200)
+			let ctx = try MODBUSContext(port: kPort, baud: 19200)
 			ctx.debug = true
 			ctx.deviceID = 1
 			try ctx.connect()
@@ -56,7 +61,7 @@ SwiftMODBUSTests: XCTestCase
 	testEurotherm()
 		throws
 	{
-		let ctx = try MODBUSContext(port: "/dev/tty.usbserial-A600euQU", baud: 19200)
+		let ctx = try MODBUSContext(port: kPort, baud: 19200)
 		ctx.debug = false
 		ctx.deviceID = 6
 		try ctx.connect()
@@ -77,14 +82,12 @@ SwiftMODBUSTests: XCTestCase
 		
 	}
 	
-	@available(macOS 12.0.0, *)
 	func
 	testAsync()
 		async
 		throws
 	{
-//		let ctx = try MODBUSContext(port: "/dev/tty.usbserial-A600euQU", baud: 19200)		//	Addr 6
-		let ctx = try MODBUSContext(port: "/dev/tty.usbserial-AK05M8LO", baud: 19200)		//	Addr 7
+		let ctx = try MODBUSContext(port: kPort, baud: 19200)
 		ctx.deviceID = 6
 		try ctx.connect()
 		
@@ -99,7 +102,7 @@ SwiftMODBUSTests: XCTestCase
 		let exp = XCTestExpectation()
 		exp.expectedFulfillmentCount = 3
 		
-		let ctx = try MODBUSContext(port: "/dev/tty.usbserial-A600euQU", baud: 19200)
+		let ctx = try MODBUSContext(port: kPort, baud: 19200)
 		ctx.deviceID = 6
 		try ctx.connect()
 		

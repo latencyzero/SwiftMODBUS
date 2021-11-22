@@ -76,7 +76,6 @@ MODBUSContext
 		Asynchronously read the `UInt16` at ``inAddr`` from ``inDeviceID``
 	*/
 	
-	@available(macOS 12.0.0, *)
 	public
 	func
 	readRegister(address inAddr: Int, fromDevice inDeviceID: Int)
@@ -103,6 +102,7 @@ MODBUSContext
 		}
 	}
 	
+	@available(*, renamed: "readRegister(address:fromDevice:)")
 	public
 	func
 	readRegister(address inAddr: Int, fromDevice inDeviceID: Int, completion inCompletion: @escaping (UInt16?, Error?) -> ())
