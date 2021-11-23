@@ -78,7 +78,7 @@ MODBUSContext
 	
 	public
 	func
-	readRegister(address inAddr: Int, fromDevice inDeviceID: Int)
+	readRegister(fromDevice inDeviceID: Int, atAddress inAddr: Int)
 		async
 		throws
 		-> UInt16
@@ -92,6 +92,93 @@ MODBUSContext
 					self.deviceID = inDeviceID
 					let r = try self.readRegister(address: inAddr)
 					inCont.resume(returning: r)
+				}
+				
+				catch (let e)
+				{
+					inCont.resume(throwing: e)
+				}
+			}
+		}
+	}
+	
+	/**
+		Asynchronously write the `Float` to ``inDeviceID`` at ``inAddr``
+	*/
+	
+	public
+	func
+	write(toDevice inDeviceID: Int, atAddress inAddr: Int, value inVal: Float)
+		async
+		throws
+	{
+		try await withCheckedThrowingContinuation
+		{ (inCont: CheckedContinuation<Void, Error>) -> Void in
+			self.workQ.async
+			{
+				do
+				{
+					self.deviceID = inDeviceID
+					try self.write(address: inAddr, value: inVal)
+					inCont.resume()
+				}
+				
+				catch (let e)
+				{
+					inCont.resume(throwing: e)
+				}
+			}
+		}
+	}
+	
+	/**
+		Asynchronously write the `UInt16` to ``inDeviceID`` at ``inAddr``
+	*/
+	
+	public
+	func
+	write(toDevice inDeviceID: Int, atAddress inAddr: Int, value inVal: UInt16)
+		async
+		throws
+	{
+		try await withCheckedThrowingContinuation
+		{ (inCont: CheckedContinuation<Void, Error>) -> Void in
+			self.workQ.async
+			{
+				do
+				{
+					self.deviceID = inDeviceID
+					try self.write(address: inAddr, values: [inVal])
+					inCont.resume()
+				}
+				
+				catch (let e)
+				{
+					inCont.resume(throwing: e)
+				}
+			}
+		}
+	}
+	
+	/**
+		Asynchronously write the array at ``inAddr`` to ``inDeviceID``
+	*/
+	
+	public
+	func
+	write(toDevice inDeviceID: Int, atAddress inAddr: Int, values inVals: [UInt16])
+		async
+		throws
+	{
+		try await withCheckedThrowingContinuation
+		{ (inCont: CheckedContinuation<Void, Error>) -> Void in
+			self.workQ.async
+			{
+				do
+				{
+					self.deviceID = inDeviceID
+					try self.write(address: inAddr, values: inVals)
+					inCont.resume()
 				}
 				
 				catch (let e)

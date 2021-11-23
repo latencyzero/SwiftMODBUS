@@ -12,6 +12,18 @@ class
 SwiftMODBUSTests: XCTestCase
 {
 	func
+	testAlicatAsync()
+		async
+		throws
+	{
+		let ctx = try MODBUSContext(port: kPort, baud: 19200)
+		try ctx.connect()
+		print("write setpoint")
+		let f: Float = 1.2345
+		try await ctx.write(toDevice: 7, atAddress: 1009, value: f)
+	}
+	
+	func
 	testAlicat()
 		throws
 	{
@@ -88,11 +100,13 @@ SwiftMODBUSTests: XCTestCase
 		throws
 	{
 		let ctx = try MODBUSContext(port: kPort, baud: 19200)
-		ctx.deviceID = 6
 		try ctx.connect()
 		
-		let result = try await ctx.readRegister(address: 1, fromDevice: 6)
-		print("PV: \(result)")
+		var result = try await ctx.readRegister(fromDevice: 6, atAddress: 1)
+		print("Eurotherm PV: \(result)")
+		
+		result = try await ctx.readRegister(fromDevice: 7, atAddress: 1)
+		print("Alicat: \(result)")
 	}
 	
 	func
