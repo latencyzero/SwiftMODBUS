@@ -20,7 +20,7 @@ SwiftMODBUSTests: XCTestCase
 		try ctx.connect()
 		print("write setpoint")
 		let f: Float = 1.2345
-		try await ctx.write(toDevice: 7, atAddress: 1009, value: f)
+		try await ctx.write(toDevice: 12, atAddress: 1009, value: f)
 	}
 	
 	func
