@@ -31,7 +31,7 @@ SwiftMODBUSTests: XCTestCase
 		{
 			let ctx = try MODBUSContext(port: kPort, baud: 19200)
 			ctx.debug = true
-			ctx.deviceID = 1
+			ctx.deviceID = 12
 			try ctx.connect()
 			
 			let v = try ctx.readRegister(address: 1000)
@@ -75,7 +75,7 @@ SwiftMODBUSTests: XCTestCase
 	{
 		let ctx = try MODBUSContext(port: kPort, baud: 19200)
 		ctx.debug = false
-		ctx.deviceID = 6
+		ctx.deviceID = 11
 		try ctx.connect()
 		
 		var v = try ctx.readRegister(address: 1)
@@ -102,10 +102,10 @@ SwiftMODBUSTests: XCTestCase
 		let ctx = try MODBUSContext(port: kPort, baud: 19200)
 		try ctx.connect()
 		
-		var result = try await ctx.readRegister(fromDevice: 6, atAddress: 1)
+		var result = try await ctx.readRegister(fromDevice: 11, atAddress: 1)
 		print("Eurotherm PV: \(result)")
 		
-		result = try await ctx.readRegister(fromDevice: 7, atAddress: 1)
+		result = try await ctx.readRegister(fromDevice: 12, atAddress: 1)
 		print("Alicat: \(result)")
 	}
 	
@@ -120,7 +120,7 @@ SwiftMODBUSTests: XCTestCase
 		ctx.deviceID = 6
 		try ctx.connect()
 		
-		ctx.readRegister(address: 1, fromDevice: 6)
+		ctx.readRegister(address: 1, fromDevice: 11)
 		{ inResult, inError in
 			XCTAssertNil(inError)
 			XCTAssertNotNil(inResult)
@@ -134,7 +134,7 @@ SwiftMODBUSTests: XCTestCase
 			exp.fulfill()
 		}
 		
-		ctx.readRegister(address: 4, fromDevice: 6)
+		ctx.readRegister(address: 4, fromDevice: 11)
 		{ inResult, inError in
 			XCTAssertNil(inError)
 			XCTAssertNotNil(inResult)
@@ -148,7 +148,7 @@ SwiftMODBUSTests: XCTestCase
 			exp.fulfill()
 		}
 		
-		ctx.read(address: 4, fromDevice: 6)			//	TODO: This MODBUS register is not float
+		ctx.read(address: 4, fromDevice: 11)			//	TODO: This MODBUS register is not float
 		{ (inResult: Float?, inError: Error?) in
 			XCTAssertNil(inError)
 			XCTAssertNotNil(inResult)
