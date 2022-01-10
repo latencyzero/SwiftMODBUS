@@ -72,6 +72,36 @@ MODBUSContext
 		}
 	}
 	
+	public
+	func
+	setByteTimeout(seconds inSeconds: TimeInterval)
+		throws
+	{
+		let v = modf(inSeconds)
+		let seconds = UInt32(v.0)
+		let usec = UInt32(v.1 * 1000000)
+		let rc = modbus_set_byte_timeout(self.ctx, seconds, usec)
+		if rc != 0
+		{
+			throw MBError(errno: errno)
+		}
+	}
+	
+	public
+	func
+	setResponseTimeout(seconds inSeconds: TimeInterval)
+		throws
+	{
+		let v = modf(inSeconds)
+		let seconds = UInt32(v.0)
+		let usec = UInt32(v.1 * 1000000)
+		let rc = modbus_set_response_timeout(self.ctx, seconds, usec)
+		if rc != 0
+		{
+			throw MBError(errno: errno)
+		}
+	}
+	
 	/**
 		Asynchronously read the `UInt16` at ``inAddr`` from ``inDeviceID``
 	*/
@@ -494,13 +524,33 @@ MBError : CustomDebugStringConvertible
 	var
 	debugDescription: String
 	{
-		if case let .unknown(error) = self
+		switch self
 		{
-			return errDesc(error)
-		}
-		else
-		{
-			return String(describing: self)
+			case .unknown(let ec):								return "Unknown (\(ec))"
+			case .deviceIDNotSet:								return "Device ID not set"
+			case .unexpectedReturnedRegisterCount(let c):		return "Unexpected returned register count: \(c)"
+			case .timeout:										return "Timeout"
+			
+			case .invalidFunction:								return "Invalid function"
+			case .invalidAddress:								return "Invalid address"
+			case .invalidValue:									return "Invalid value"
+			case .serverFailure:								return "Server failure"
+			case .ack:											return "Acknowledged"
+			case .serverBusy:									return "Server busy"
+			case .nack:											return "Not acknowledged"
+			case .memoryParity:									return "Memory parity"
+			case .notDefined:									return "Error not defined"
+			case .gatewayPathUnavailable:						return "Gateway path unavailable"
+			case .noResponse:									return "No response"
+			case .invalidCRC:									return "Invalid CRC"
+			case .invalidData:									return "Invalid data"
+			case .invalidExeceptionCode:						return "Invalid exception code"
+			case .unknownExeceptionCode:						return "Unknown exception code"
+			case .dataOverflow:									return "Data overflow"
+			case .badServer:									return "Bad server"
+			
+			default:
+				return "Unknown error"
 		}
 	}
 	

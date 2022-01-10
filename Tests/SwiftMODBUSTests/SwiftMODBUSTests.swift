@@ -99,14 +99,93 @@ SwiftMODBUSTests: XCTestCase
 		async
 		throws
 	{
+		do
+		{
+			let ctx = try MODBUSContext(port: kPort, baud: 19200)
+			try ctx.setByteTimeout(seconds: 0.1)
+			try ctx.setResponseTimeout(seconds: 2)
+			try ctx.connect()
+			
+			let eurothermAddr = 11
+			let pvAddr = 0x0001
+			let userVal1Addr = 0x1362
+			let userVal2Addr = 0x1363
+			
+			print("Switching to 1")
+			try await ctx.write(toDevice: eurothermAddr, atAddress: userVal1Addr, value: UInt16(1))	//	Set to manual control
+			try await ctx.write(toDevice: eurothermAddr, atAddress: userVal2Addr, value: UInt16(1))	//	Set to sample TC
+			
+			var result: UInt16
+			var signed: Int16
+			
+			for i in 0..<10
+			{
+				result = try await ctx.readRegister(fromDevice: eurothermAddr, atAddress: pvAddr)
+		//		print("Eurotherm PV: \(result)")
+				signed = Int16(bitPattern: result)
+				print("Eurotherm PV 1 \(i): \(signed)")
+				
+				try await Task.sleep(seconds: 0.001)
+			}
+			
+			//	Set to other TC, read with delay…
+			
+			print("Switching to 2")
+			
+			try await ctx.write(toDevice: eurothermAddr, atAddress: userVal2Addr, value: UInt16(2))	//	Set to oven TC
+				
+			for i in 0..<10
+			{
+				result = try await ctx.readRegister(fromDevice: eurothermAddr, atAddress: pvAddr)
+		//		print("Eurotherm PV: \(result)")
+				signed = Int16(bitPattern: result)
+				print("Eurotherm PV 2 \(i): \(signed)")
+				
+				try await Task.sleep(seconds: 0.001)
+			}
+			
+	//		try await ctx.write(toDevice: eurothermAddr, atAddress: userVal2Addr, value: UInt16(1))	//	Set to sample TC
+			
+			
+			
+			let alicatAddr = 12
+			
+			result = try await ctx.readRegister(fromDevice: alicatAddr, atAddress: 1)
+			print("Alicat: \(result)")
+		}
+		
+		catch let e
+		{
+			if let ee = e as? MBError
+			{
+				print("Error: \(ee)")
+			}
+		}
+	}
+	
+	func
+	testSwitchInput()
+		async
+		throws
+	{
 		let ctx = try MODBUSContext(port: kPort, baud: 19200)
 		try ctx.connect()
 		
-		var result = try await ctx.readRegister(fromDevice: 11, atAddress: 1)
-		print("Eurotherm PV: \(result)")
+		let eurothermAddr = 11
+		let userVal1Addr = 0x1362
+		let userVal2Addr = 0x1363
 		
-		result = try await ctx.readRegister(fromDevice: 12, atAddress: 1)
-		print("Alicat: \(result)")
+		var result = try await ctx.readRegister(fromDevice: eurothermAddr, atAddress: userVal1Addr)
+		print("Eurotherm UsrVal.1.Val: \(result)")
+		
+		try await ctx.write(toDevice: eurothermAddr, atAddress: userVal1Addr, value: UInt16(1))	//	Set to manual control
+		try await ctx.write(toDevice: eurothermAddr, atAddress: userVal2Addr, value: UInt16(1))
+		
+		result = try await ctx.readRegister(fromDevice: eurothermAddr, atAddress: userVal1Addr)
+		print("Eurotherm UsrVal.1.Val: \(result)")
+		
+		result = try await ctx.readRegister(fromDevice: eurothermAddr, atAddress: userVal2Addr)
+		print("Eurotherm UsrVal.2.Val: \(result)")
 	}
 	
 	func
@@ -164,4 +243,12 @@ SwiftMODBUSTests: XCTestCase
 		
 		wait(for: [exp], timeout: 10)
 	}
+}
+
+
+extension Task where Success == Never, Failure == Never {
+    static func sleep(seconds: Double) async throws {
+        let duration = UInt64(seconds * 1_000_000_000)
+        try await Task.sleep(nanoseconds: duration)
+    }
 }
