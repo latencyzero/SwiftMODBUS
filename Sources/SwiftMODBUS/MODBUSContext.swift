@@ -133,6 +133,36 @@ MODBUSContext
 	}
 	
 	/**
+		Asynchronously read the `Float` at ``inAddr`` from ``inDeviceID``
+	*/
+	
+	public
+	func
+	readRegister(fromDevice inDeviceID: Int, atAddress inAddr: Int)
+		async
+		throws
+		-> Float
+	{
+		try await withCheckedThrowingContinuation
+		{ inCont in
+			self.workQ.async
+			{
+				do
+				{
+					self.deviceID = inDeviceID
+					let r: Float = try self.read(address: inAddr)
+					inCont.resume(returning: r)
+				}
+				
+				catch (let e)
+				{
+					inCont.resume(throwing: e)
+				}
+			}
+		}
+	}
+	
+	/**
 		Asynchronously write the `Float` to ``inDeviceID`` at ``inAddr``
 	*/
 	
@@ -548,9 +578,9 @@ MBError : CustomDebugStringConvertible
 			case .unknownExeceptionCode:						return "Unknown exception code"
 			case .dataOverflow:									return "Data overflow"
 			case .badServer:									return "Bad server"
-			
-			default:
-				return "Unknown error"
+
+//			default:
+//				return "Unknown error"
 		}
 	}
 	

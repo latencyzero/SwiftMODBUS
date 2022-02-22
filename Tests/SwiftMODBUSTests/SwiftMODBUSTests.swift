@@ -95,6 +95,29 @@ SwiftMODBUSTests: XCTestCase
 	}
 	
 	func
+	testEurothermFloat()
+		async
+		throws
+	{
+		let ctx = try MODBUSContext(port: kPort, baud: 19200)
+		ctx.debug = false
+		try ctx.connect()
+		
+		var v: Float = try await ctx.readRegister(fromDevice: 11, atAddress: 0x531c)
+		print("Sample Temp: \(v)")
+		
+		v = try await ctx.readRegister(fromDevice: 11, atAddress: 0x50f7)
+		print("Furnace Temp: \(v)")
+		
+		let sbrk: UInt16 = try await ctx.readRegister(fromDevice: 11, atAddress: 0x511f)
+		print("Furnace sensor break: \(sbrk)")
+		
+		let sbrkSample: UInt16 = try await ctx.readRegister(fromDevice: 11, atAddress: 0x5339)
+		print("Sample sensor break: \(sbrkSample)")
+		
+	}
+	
+	func
 	testAsync()
 		async
 		throws
@@ -175,7 +198,7 @@ SwiftMODBUSTests: XCTestCase
 		let userVal1Addr = 0x1362
 		let userVal2Addr = 0x1363
 		
-		var result = try await ctx.readRegister(fromDevice: eurothermAddr, atAddress: userVal1Addr)
+		var result: UInt16 = try await ctx.readRegister(fromDevice: eurothermAddr, atAddress: userVal1Addr)
 		print("Eurotherm UsrVal.1.Val: \(result)")
 		
 		try await ctx.write(toDevice: eurothermAddr, atAddress: userVal1Addr, value: UInt16(1))	//	Set to manual control
@@ -186,6 +209,29 @@ SwiftMODBUSTests: XCTestCase
 		
 		result = try await ctx.readRegister(fromDevice: eurothermAddr, atAddress: userVal2Addr)
 		print("Eurotherm UsrVal.2.Val: \(result)")
+	}
+	
+	func
+	testSwitchInputToFurnace()
+		async
+		throws
+	{
+		let ctx = try MODBUSContext(port: kPort, baud: 19200)
+		try ctx.connect()
+		
+		let eurothermAddr = 11
+		let userVal1Addr = 0x1362
+		
+		var result: UInt16 = try await ctx.readRegister(fromDevice: eurothermAddr, atAddress: userVal1Addr)
+		print("Eurotherm UsrVal.1.Val: \(result)")
+		
+		try await ctx.write(toDevice: eurothermAddr, atAddress: userVal1Addr, value: UInt16(2))	//	Set to furnace TC
+		
+		result = try await ctx.readRegister(fromDevice: eurothermAddr, atAddress: userVal1Addr)
+		print("Eurotherm UsrVal.1.Val: \(result)")
+		
+		result = try await ctx.readRegister(fromDevice: eurothermAddr, atAddress: userVal1Addr)
+		print("Eurotherm UsrVal.1.Val: \(result)")
 	}
 	
 	func
