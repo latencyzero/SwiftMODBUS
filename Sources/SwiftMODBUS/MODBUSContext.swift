@@ -44,12 +44,14 @@ MODBUSContext
 			queue inQueue: DispatchQueue = .main)
 		throws
 	{
-		self.ctx = modbus_new_rtu(inPort, Int32(inBaud), inParity.charValue, Int32(inWordSize), Int32(inStopBits))
-		if self.ctx == nil
+		guard
+			let ctx = modbus_new_rtu(inPort, Int32(inBaud), inParity.charValue, Int32(inWordSize), Int32(inStopBits))
+		else
 		{
 			throw MBError(errno: errno)
 		}
 		
+		self.ctx = ctx
 		self.workQ = DispatchQueue(label: "Modbus \(inPort)", qos: .userInitiated)
 		self.callbackQ = inQueue
 	}
@@ -65,8 +67,6 @@ MODBUSContext
 	{
 		//	The only error returned by ``modbus_set_debug`` is EINVAL, if
 		//	the context is not set. We know the context is always valid.
-		
-		precondition(self.ctx != nil)
 		
 		modbus_set_debug(self.ctx, inDebug ? 1 : 0)
 	}
@@ -577,7 +577,7 @@ MODBUSContext
 		}
 	}
 	
-	let		ctx					:	OpaquePointer!
+	let		ctx					:	OpaquePointer
 	let		workQ				:	DispatchQueue
 	let		callbackQ			:	DispatchQueue
 }

@@ -3,7 +3,7 @@ import XCTest
 
 
 //fileprivate let	kPort				=	"/dev/tty.usbserial-AO004DTP"
-fileprivate let	kPort				=	"/dev/tty.usbserial-AK05M8LO"
+fileprivate let	kPort				=	"/dev/tty.usbserial-AK05M8LO-"
 
 
 
@@ -30,11 +30,11 @@ SwiftMODBUSTests: XCTestCase
 		do
 		{
 			let ctx = try MODBUSContext(port: kPort, baud: 19200)
-			ctx.debug = true
+			ctx.set(debug: true)
 			ctx.deviceID = 12
 			try ctx.connect()
 			
-			let v = try ctx.readRegister(address: 1000)
+			let v: UInt16 = try ctx.readRegister(address: 1000)
 			print("Register: \(v)")
 			
 			var f: Float = try ctx.read(address: 1202)
@@ -74,11 +74,11 @@ SwiftMODBUSTests: XCTestCase
 		throws
 	{
 		let ctx = try MODBUSContext(port: kPort, baud: 19200)
-		ctx.debug = false
+		ctx.set(debug: true)
 		ctx.deviceID = 11
 		try ctx.connect()
 		
-		var v = try ctx.readRegister(address: 1)
+		var v: UInt16 = try ctx.readRegister(address: 1)
 		print("PV: \(v)")
 		
 		v = try ctx.readRegister(address: 2)
@@ -100,7 +100,7 @@ SwiftMODBUSTests: XCTestCase
 		throws
 	{
 		let ctx = try MODBUSContext(port: kPort, baud: 19200)
-		ctx.debug = false
+		ctx.set(debug: true)
 		try ctx.connect()
 		
 		var v: Float = try await ctx.readRegister(fromDevice: 11, atAddress: 0x531c)
@@ -125,7 +125,7 @@ SwiftMODBUSTests: XCTestCase
 		do
 		{
 			let ctx = try MODBUSContext(port: kPort, baud: 19200)
-			ctx.debug = false
+			ctx.set(debug: true)
 			try ctx.connect()
 			
 			try await ctx.write(toDevice: 11, atAddress: 0x58ca, value: 123.0)
