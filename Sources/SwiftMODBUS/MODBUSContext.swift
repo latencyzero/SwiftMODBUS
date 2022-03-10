@@ -13,6 +13,7 @@ import Foundation
 
 
 public
+final
 class
 MODBUSContext
 {
@@ -60,6 +61,18 @@ MODBUSContext
 	
 	public
 	func
+	set(debug inDebug: Bool)
+	{
+		//	The only error returned by ``modbus_set_debug`` is EINVAL, if
+		//	the context is not set. We know the context is always valid.
+		
+		precondition(self.ctx != nil)
+		
+		modbus_set_debug(self.ctx, inDebug ? 1 : 0)
+	}
+	
+	public
+	func
 	connect()
 		throws
 	{
@@ -102,6 +115,8 @@ MODBUSContext
 		}
 	}
 	
+	//	MARK: - • Async Methods -
+	
 	/**
 		Asynchronously read the `UInt16` at ``inAddr`` from ``inDeviceID``
 	*/
@@ -120,7 +135,59 @@ MODBUSContext
 				do
 				{
 					self.deviceID = inDeviceID
-					let r = try self.readRegister(address: inAddr)
+					let r: UInt16 = try self.readRegister(address: inAddr)
+					inCont.resume(returning: r)
+				}
+				
+				catch (let e)
+				{
+					inCont.resume(throwing: e)
+				}
+			}
+		}
+	}
+	
+	public
+	func
+	readRegister(fromDevice inDeviceID: Int, atAddress inAddr: Int)
+		async
+		throws
+		-> UInt32
+	{
+		try await withCheckedThrowingContinuation
+		{ inCont in
+			self.workQ.async
+			{
+				do
+				{
+					self.deviceID = inDeviceID
+					let r: UInt32 = try self.readRegister(address: inAddr)
+					inCont.resume(returning: r)
+				}
+				
+				catch (let e)
+				{
+					inCont.resume(throwing: e)
+				}
+			}
+		}
+	}
+	
+	public
+	func
+	readRegister(fromDevice inDeviceID: Int, atAddress inAddr: Int)
+		async
+		throws
+		-> Int32
+	{
+		try await withCheckedThrowingContinuation
+		{ inCont in
+			self.workQ.async
+			{
+				do
+				{
+					self.deviceID = inDeviceID
+					let r: Int32 = try self.readRegister(address: inAddr)
 					inCont.resume(returning: r)
 				}
 				
@@ -220,6 +287,31 @@ MODBUSContext
 		}
 	}
 	
+	public
+	func
+	write(toDevice inDeviceID: Int, atAddress inAddr: Int, value inVal: Int32)
+		async
+		throws
+	{
+		try await withCheckedThrowingContinuation
+		{ (inCont: CheckedContinuation<Void, Error>) -> Void in
+			self.workQ.async
+			{
+				do
+				{
+					self.deviceID = inDeviceID
+					try self.write(address: inAddr, value: inVal)
+					inCont.resume()
+				}
+				
+				catch (let e)
+				{
+					inCont.resume(throwing: e)
+				}
+			}
+		}
+	}
+	
 	/**
 		Asynchronously write the array at ``inAddr`` to ``inDeviceID``
 	*/
@@ -259,7 +351,7 @@ MODBUSContext
 			do
 			{
 				self.deviceID = inDeviceID
-				let r = try self.readRegister(address: inAddr)
+				let r: UInt16 = try self.readRegister(address: inAddr)
 				self.callbackQ.async { inCompletion(r, nil) }
 			}
 			
@@ -337,6 +429,40 @@ MODBUSContext
 	}
 	
 	func
+	readRegister(address inAddr: Int)
+		throws
+		-> UInt32
+	{
+		if self.deviceID == -1
+		{
+			throw MBError.deviceIDNotSet
+		}
+		
+		let vals = try readRegisters(address: inAddr, count: 2)
+		let high = vals[0]
+		let low = vals[1]
+		let word = UInt32(high) << 16 | UInt32(low)
+		return word
+	}
+	
+	func
+	readRegister(address inAddr: Int)
+		throws
+		-> Int32
+	{
+		if self.deviceID == -1
+		{
+			throw MBError.deviceIDNotSet
+		}
+		
+		let vals = try readRegisters(address: inAddr, count: 2)
+		let high = vals[0]
+		let low = vals[1]
+		let word = Int32(high) << 16 | Int32(low)
+		return word
+	}
+	
+	func
 	readRegisters(address inAddr: Int, count inCount: Int)
 		throws
 		-> [UInt16]
@@ -350,7 +476,7 @@ MODBUSContext
 		let rc = modbus_read_registers(self.ctx, Int32(inAddr), Int32(inCount), &v)
 		if rc == -1
 		{
-			throw MBError(errno: errno)
+			throw MBError(errno: errno, addr: inAddr)
 		}
 		else if rc != inCount
 		{
@@ -386,7 +512,7 @@ MODBUSContext
 		let rc = modbus_write_registers(self.ctx, Int32(inAddr), Int32(inVals.count), &vals)
 		if rc != vals.count
 		{
-			throw MBError(errno: errno)
+			throw MBError(errno: errno, addr: inAddr, value: String(describing: inVals))
 		}
 	}
 	
@@ -396,6 +522,14 @@ MODBUSContext
 	{
 		let bits = inVal.bitPattern
 		let word: [UInt16] = [ UInt16(bits >> 16 & 0xFFFF), UInt16(bits & 0xFFFF) ]
+		try write(address: inAddr, values: word)
+	}
+	
+	func
+	write(address inAddr: Int, value inVal: Int32)
+		throws
+	{
+		let word: [UInt16] = [ UInt16(inVal >> 16 & 0xFFFF), UInt16(inVal & 0xFFFF) ]
 		try write(address: inAddr, values: word)
 	}
 	
@@ -443,16 +577,6 @@ MODBUSContext
 		}
 	}
 	
-	public
-	var
-	debug: Bool = false
-	{
-		didSet
-		{
-			modbus_set_debug(self.ctx, self.debug ? 1 : 0)
-		}
-	}
-	
 	let		ctx					:	OpaquePointer!
 	let		workQ				:	DispatchQueue
 	let		callbackQ			:	DispatchQueue
@@ -489,6 +613,7 @@ MODBUSContext.SerialMode
 	}
 }
 
+public
 enum
 MBError : Error
 {
@@ -500,8 +625,8 @@ MBError : Error
 	//	libmodbus errors
 	
 	case invalidFunction
-	case invalidAddress
-	case invalidValue
+	case invalidAddress(Int?)
+	case invalidValue(Int?, String?)
 	case serverFailure
 	case ack
 	case serverBusy
@@ -518,14 +643,18 @@ MBError : Error
 	case badServer			//	Response not from requested device
 	
 	
-	init(errno inErr: Int32)
+	/**
+		Pass the address or formatted value to improve the error message context.
+	*/
+	
+	init(errno inErr: Int32, addr inAddr: Int? = nil, value inVal: String? = nil)
 	{
 		let kErrorBase = 112345678
 		switch inErr
 		{
 			case Int32(kErrorBase +  1):	self = .invalidFunction
-			case Int32(kErrorBase +  2):	self = .invalidAddress
-			case Int32(kErrorBase +  3):	self = .invalidValue
+			case Int32(kErrorBase +  2):	self = .invalidAddress(inAddr)
+			case Int32(kErrorBase +  3):	self = .invalidValue(inAddr, inVal)
 			case Int32(kErrorBase +  4):	self = .serverFailure
 			case Int32(kErrorBase +  5):	self = .ack
 			case Int32(kErrorBase +  6):	self = .serverBusy
@@ -551,6 +680,7 @@ MBError : Error
 extension
 MBError : CustomDebugStringConvertible
 {
+	public
 	var
 	debugDescription: String
 	{
@@ -562,8 +692,8 @@ MBError : CustomDebugStringConvertible
 			case .timeout:										return "Timeout"
 			
 			case .invalidFunction:								return "Invalid function"
-			case .invalidAddress:								return "Invalid address"
-			case .invalidValue:									return "Invalid value"
+			case .invalidAddress(let a):						return "Invalid address \(String(describing: a))"
+			case .invalidValue(let a, let v):					return "Invalid value \(a) \(v)"
 			case .serverFailure:								return "Server failure"
 			case .ack:											return "Acknowledged"
 			case .serverBusy:									return "Server busy"

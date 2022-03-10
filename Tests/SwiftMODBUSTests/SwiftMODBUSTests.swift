@@ -118,6 +118,26 @@ SwiftMODBUSTests: XCTestCase
 	}
 	
 	func
+	testSetEurothermFloatSP()
+		async
+		throws
+	{
+		do
+		{
+			let ctx = try MODBUSContext(port: kPort, baud: 19200)
+			ctx.debug = false
+			try ctx.connect()
+			
+			try await ctx.write(toDevice: 11, atAddress: 0x58ca, value: 123.0)
+		}
+		
+		catch let e
+		{
+			throw e
+		}
+	}
+	
+	func
 	testAsync()
 		async
 		throws

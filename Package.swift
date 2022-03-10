@@ -7,14 +7,11 @@ let package = Package(
 	name: "SwiftMODBUS",
 	platforms: [ .macOS(.v12), .iOS(.v15) ],
 	products: [
-		// Products define the executables and libraries a package produces, and make them visible to other packages.
 		.library(
 			name: "SwiftMODBUS",
 			targets: ["SwiftMODBUS"]),
 	],
 	dependencies: [
-		// Dependencies declare other packages that this package depends on.
-		// .package(url: /* package url */, from: "1.0.0"),
 	],
 	targets: [
 		.systemLibrary(name: "libmodbus", pkgConfig: "libmodbus", providers: [.brew(["libmodbus"]), .apt(["libmodbus-dev"])]),
@@ -26,3 +23,4 @@ let package = Package(
 			dependencies: ["SwiftMODBUS"]),
 	]
 )
+
