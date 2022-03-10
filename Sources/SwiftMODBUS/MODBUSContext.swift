@@ -693,7 +693,7 @@ MBError : CustomDebugStringConvertible
 			
 			case .invalidFunction:								return "Invalid function"
 			case .invalidAddress(let a):						return "Invalid address \(String(describing: a))"
-			case .invalidValue(let a, let v):					return "Invalid value \(a) \(v)"
+			case .invalidValue(let a, let v):					return "Invalid value \(String(describing: a)) \(String(describing: v))"
 			case .serverFailure:								return "Server failure"
 			case .ack:											return "Acknowledged"
 			case .serverBusy:									return "Server busy"
