@@ -3,7 +3,8 @@ import XCTest
 
 
 //fileprivate let	kPort				=	"/dev/tty.usbserial-AO004DTP"
-fileprivate let	kPort				=	"/dev/tty.usbserial-AK05M8LO-"
+//fileprivate let	kPort				=	"/dev/tty.usbserial-AK05M8LO"
+fileprivate let	kPort				=	"/dev/tty.usbserial-AK05M92J"
 
 
 
@@ -16,11 +17,26 @@ SwiftMODBUSTests: XCTestCase
 		async
 		throws
 	{
-		let ctx = try MODBUSContext(port: kPort, baud: 19200)
-		try ctx.connect()
-		print("write setpoint")
-		let f: Float = 1.2345
-		try await ctx.write(toDevice: 12, atAddress: 1009, value: f)
+		do
+		{
+			let ctx = try MODBUSContext(port: kPort, baud: 19200)
+			ctx.set(debug: true)
+			try ctx.setByteTimeout(seconds: 1.0)
+			try ctx.setResponseTimeout(seconds: 1.0)
+			try ctx.connect()
+			let v: Float = try await retry(3) { try await ctx.readRegister(fromDevice: 13, atAddress: 1210) }
+			print("Val: \(v)")
+		}
+		
+		catch (let e)
+		{
+			if case let MBError.unknown(err) = e
+			{
+				print("Errno: \(err)")
+			}
+			print("Err: \(e)")
+			throw e
+		}
 	}
 	
 	func
@@ -30,11 +46,11 @@ SwiftMODBUSTests: XCTestCase
 		do
 		{
 			let ctx = try MODBUSContext(port: kPort, baud: 19200)
-			ctx.set(debug: true)
+			ctx.set(debug: false)
 			ctx.deviceID = 12
 			try ctx.connect()
 			
-			let v: UInt16 = try ctx.readRegister(address: 1000)
+			let v: UInt16 = try ctx.readRegister(address: 1199)
 			print("Register: \(v)")
 			
 			var f: Float = try ctx.read(address: 1202)
@@ -317,4 +333,30 @@ extension Task where Success == Never, Failure == Never {
         let duration = UInt64(seconds * 1_000_000_000)
         try await Task.sleep(nanoseconds: duration)
     }
+}
+
+
+func
+retry<T>(_ inCount: Int, block inBlock: () async throws -> T)
+	async
+	rethrows
+	-> T
+{
+	do
+	{
+		return try await inBlock()
+	}
+	
+	catch let e
+	{
+		if inCount > 1
+		{
+			print("retrying due to error \(e)")
+			return try await retry(inCount - 1, block: inBlock)
+		}
+		else
+		{
+			throw e
+		}
+	}
 }

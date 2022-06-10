@@ -12,12 +12,16 @@ let package = Package(
 			targets: ["SwiftMODBUS"]),
 	],
 	dependencies: [
+		.package(url: "https://github.com/uraimo/SwiftyGPIO.git",					from: "1.0.0"),
 	],
 	targets: [
 		.systemLibrary(name: "libmodbus", pkgConfig: "libmodbus", providers: [.brew(["libmodbus"]), .apt(["libmodbus-dev"])]),
 		.target(
 			name: "SwiftMODBUS",
-			dependencies: ["libmodbus"]),
+			dependencies: [
+				"libmodbus",
+				.product(name: "SwiftyGPIO", package: "SwiftyGPIO"),
+			]),
 		.testTarget(
 			name: "SwiftMODBUSTests",
 			dependencies: ["SwiftMODBUS"]),
