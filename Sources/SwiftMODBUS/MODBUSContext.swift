@@ -50,7 +50,7 @@ MODBUSContext
 			let ctx = modbus_new_rtu(inPort, Int32(inBaud), inParity.charValue, Int32(inWordSize), Int32(inStopBits))
 		else
 		{
-			throw MBError(errno: errno)
+			throw MBError(errno: errno, devID: 0)
 		}
 		
 		self.ctx = ctx
@@ -99,7 +99,7 @@ MODBUSContext
 			rc == 0
 		else
 		{
-			throw MBError(errno: errno)
+			throw MBError(errno: errno, devID: self.deviceID)
 		}
 	}
 	
@@ -114,7 +114,7 @@ MODBUSContext
 		let rc = modbus_set_byte_timeout(self.ctx, seconds, usec)
 		if rc != 0
 		{
-			throw MBError(errno: errno)
+			throw MBError(errno: errno, devID: self.deviceID)
 		}
 	}
 	
@@ -129,7 +129,7 @@ MODBUSContext
 		let rc = modbus_set_response_timeout(self.ctx, seconds, usec)
 		if rc != 0
 		{
-			throw MBError(errno: errno)
+			throw MBError(errno: errno, devID: self.deviceID)
 		}
 	}
 	
@@ -437,7 +437,7 @@ MODBUSContext
 		let rc = modbus_read_registers(self.ctx, Int32(inAddr), 1, &v)
 		if rc == -1
 		{
-			throw MBError(errno: errno)
+			throw MBError(errno: errno, devID: self.deviceID)
 		}
 		else if rc != 1
 		{
@@ -494,7 +494,7 @@ MODBUSContext
 		let rc = modbus_read_registers(self.ctx, Int32(inAddr), Int32(inCount), &v)
 		if rc == -1
 		{
-			throw MBError(errno: errno, addr: inAddr)
+			throw MBError(errno: errno, devID: self.deviceID, addr: inAddr)
 		}
 		else if rc != inCount
 		{
@@ -530,7 +530,7 @@ MODBUSContext
 		let rc = modbus_write_registers(self.ctx, Int32(inAddr), Int32(inVals.count), &vals)
 		if rc != vals.count
 		{
-			throw MBError(errno: errno, addr: inAddr, value: String(describing: inVals))
+			throw MBError(errno: errno, devID: self.deviceID, addr: inAddr, value: String(describing: inVals))
 		}
 	}
 	
@@ -638,7 +638,7 @@ MBError : Error
 	case unknown(Int)
 	case deviceIDNotSet
 	case unexpectedReturnedRegisterCount(Int)
-	case timeout
+	case timeout(Int, Int)							//	Device ID, MODBUS address
 	
 	//	libmodbus errors
 	
@@ -650,22 +650,22 @@ MBError : Error
 	case serverBusy
 	case nack
 	case memoryParity
-	case notDefined			//	???
+	case notDefined									//	???
 	case gatewayPathUnavailable
 	case noResponse
 	case invalidCRC
 	case invalidData
 	case invalidExeceptionCode
 	case unknownExeceptionCode
-	case dataOverflow		//	Too many bytes returned
-	case badServer			//	Response not from requested device
+	case dataOverflow								//	Too many bytes returned
+	case badServer									//	Response not from requested device
 	
 	
 	/**
 		Pass the address or formatted value to improve the error message context.
 	*/
 	
-	init(errno inErr: Int32, addr inAddr: Int? = nil, value inVal: String? = nil)
+	init(errno inErr: Int32, devID inDevID: Int, addr inAddr: Int? = nil, value inVal: String? = nil)
 	{
 		let kErrorBase = 112345678
 		switch inErr
@@ -688,7 +688,7 @@ MBError : Error
 			case Int32(kErrorBase + 16):	self = .dataOverflow
 			case Int32(kErrorBase + 17):	self = .badServer
 			
-			case Int32(ETIMEDOUT):			self = .timeout
+			case Int32(ETIMEDOUT):			self = .timeout(inDevID, inAddr ?? 0)
 			
 			default:						self = .unknown(Int(inErr))
 		}
@@ -707,7 +707,7 @@ MBError : CustomDebugStringConvertible
 			case .unknown(let ec):								return "Unknown (\(ec))"
 			case .deviceIDNotSet:								return "Device ID not set"
 			case .unexpectedReturnedRegisterCount(let c):		return "Unexpected returned register count: \(c)"
-			case .timeout:										return "Timeout"
+			case .timeout(let dev, let addr):					return "Timeout (device: \(dev), address: \(addr))"			//	TODO: format?
 			
 			case .invalidFunction:								return "Invalid function"
 			case .invalidAddress(let a):						return "Invalid address \(String(describing: a))"
