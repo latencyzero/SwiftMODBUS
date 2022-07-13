@@ -447,7 +447,7 @@ MODBUSContext
 		let rc = modbus_read_registers(self.ctx, Int32(inAddr), 1, &v)
 		if rc == -1
 		{
-			throw MBError(errno: errno, devID: self.deviceID)
+			throw MBError(errno: errno, devID: self.deviceID, addr: inAddr)
 		}
 		else if rc != 1
 		{
