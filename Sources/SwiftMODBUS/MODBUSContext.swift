@@ -436,7 +436,7 @@ MODBUSContext
 		throws
 		-> UInt16
 	{
-		print("readRegister(address: \(inAddr)) -> UInt16")
+		print("readRegister(address: \(self.deviceID)/\(inAddr)) -> UInt16")
 		
 		if self.deviceID == -1
 		{
