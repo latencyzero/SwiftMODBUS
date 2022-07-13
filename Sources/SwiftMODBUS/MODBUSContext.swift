@@ -461,7 +461,7 @@ MODBUSContext
 		throws
 		-> UInt32
 	{
-		print("readRegister(address: \(self.deviceID)/\(inAddr)) -> UInt32")
+//		print("readRegister(address: \(self.deviceID)/\(inAddr)) -> UInt32")
 		
 		if self.deviceID == -1
 		{
@@ -480,7 +480,7 @@ MODBUSContext
 		throws
 		-> Int32
 	{
-		print("readRegister(address: \(self.deviceID)/\(inAddr)) -> Int32")
+//		print("readRegister(address: \(self.deviceID)/\(inAddr)) -> Int32")
 		
 		if self.deviceID == -1
 		{
@@ -524,7 +524,7 @@ MODBUSContext
 		throws
 		-> Float
 	{
-		print("read(address: \(self.deviceID)/\(inAddr)) -> Float")
+//		print("read(address: \(self.deviceID)/\(inAddr)) -> Float")
 		
 		if self.deviceID == -1
 		{
