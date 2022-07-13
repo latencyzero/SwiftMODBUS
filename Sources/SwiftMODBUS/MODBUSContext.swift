@@ -712,7 +712,7 @@ MBError : CustomDebugStringConvertible
 	{
 		switch self
 		{
-			case .unknown(let ec):								return "Unknown (\(ec))"
+			case .unknown(let ec):								return "Unknown libmodbus error (errno: \(ec))"
 			case .deviceIDNotSet:								return "Device ID not set"
 			case .unexpectedReturnedRegisterCount(let c):		return "Unexpected returned register count: \(c)"
 			case .timeout(let dev, let addr):					return "Timeout (device: \(dev), address: \(addr))"			//	TODO: format?
