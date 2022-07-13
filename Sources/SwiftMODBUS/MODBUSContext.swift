@@ -436,6 +436,8 @@ MODBUSContext
 		throws
 		-> UInt16
 	{
+		print("readRegister(address: \(inAddr)) -> UInt16")
+		
 		if self.deviceID == -1
 		{
 			throw MBError.deviceIDNotSet
@@ -459,6 +461,8 @@ MODBUSContext
 		throws
 		-> UInt32
 	{
+		print("readRegister(address: \(self.deviceID)/\(inAddr)) -> UInt32")
+		
 		if self.deviceID == -1
 		{
 			throw MBError.deviceIDNotSet
@@ -476,6 +480,8 @@ MODBUSContext
 		throws
 		-> Int32
 	{
+		print("readRegister(address: \(self.deviceID)/\(inAddr)) -> Int32")
+		
 		if self.deviceID == -1
 		{
 			throw MBError.deviceIDNotSet
@@ -493,6 +499,8 @@ MODBUSContext
 		throws
 		-> [UInt16]
 	{
+		print("readRegisters(address: \(self.deviceID)/\(inAddr), count: \(inCount)) -> [UInt16]")
+		
 		if self.deviceID == -1
 		{
 			throw MBError.deviceIDNotSet
@@ -516,6 +524,8 @@ MODBUSContext
 		throws
 		-> Float
 	{
+		print("read(address: \(self.deviceID)/\(inAddr)) -> Float")
+		
 		if self.deviceID == -1
 		{
 			throw MBError.deviceIDNotSet
@@ -728,12 +738,13 @@ MBError : CustomDebugStringConvertible
 			case .notDefined:									return "Error not defined"
 			case .gatewayPathUnavailable:						return "Gateway path unavailable"
 			case .noResponse:									return "No response"
+			
 			case .invalidCRC:									return "Invalid CRC"
 			case .invalidData:									return "Invalid data"
 			case .invalidExeceptionCode:						return "Invalid exception code"
 			case .unknownExeceptionCode:						return "Unknown exception code"
 			case .dataOverflow:									return "Data overflow"
-			case .badServer:									return "Bad server"
+			case .badServer:									return "Response not from requested device"
 		}
 	}
 }
