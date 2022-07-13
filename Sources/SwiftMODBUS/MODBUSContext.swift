@@ -8,10 +8,6 @@ import Glibc
 
 import Foundation
 
-import SwiftyGPIO
-
-
-
 
 public
 final
@@ -26,6 +22,18 @@ MODBUSContext
 		case even
 		case odd
 	}
+	
+	public
+	enum
+	RTSMode : Int
+	{
+		case rs232			=	0
+		case rs485			=	1
+	}
+	
+	public	var			customRTS				:	((MODBUSContext, Bool) -> Void)?
+	
+	
 	
 	/**
 		Creates a MODBUS context representing a single bus connected to a system serial port.
@@ -43,7 +51,7 @@ MODBUSContext
 			wordSize inWordSize: Int = 8,
 			stopBits inStopBits: Int = 1,
 			queue inQueue: DispatchQueue = .main,
-			useTXEnable inTXEn: Bool = false)
+			useCustomRTS inUseCustomRTS: Bool = false)
 		throws
 	{
 		guard
@@ -57,19 +65,19 @@ MODBUSContext
 		self.workQ = DispatchQueue(label: "Modbus \(inPort)", qos: .userInitiated)
 		self.callbackQ = inQueue
 		
-		if inTXEn
+		modbus_set_client_context(self.ctx, Unmanaged.passRetained(self).toOpaque())
+		
+		if inUseCustomRTS
 		{
-			let gpios = SwiftyGPIO.GPIOs(for:.RaspberryPi4)
-			let txEn = gpios[.P12]!
-			txEn.direction = .OUT
-			txEn.value = 0
-			
+			modbus_rtu_set_rts(self.ctx, Int32(RTSMode.rs485.rawValue))
 			modbus_rtu_set_custom_rts(self.ctx)
 			{ inCtxPtr, inOn in
-				print("inOn: \(inOn)")
-				let gpios = SwiftyGPIO.GPIOs(for:.RaspberryPi4)
-				let txEn = gpios[.P12]!
-				txEn.value = Int(inOn)
+				let this: MODBUSContext? = Unmanaged.fromOpaque(modbus_get_client_context(inCtxPtr)).takeUnretainedValue()
+				
+				if let t = this
+				{
+					t.customRTS?(t, inOn != 0)
+				}
 			}
 		}
 	}
@@ -595,9 +603,9 @@ MODBUSContext
 		}
 	}
 	
-	let		ctx					:	OpaquePointer
-	let		workQ				:	DispatchQueue
-	let		callbackQ			:	DispatchQueue
+	let			ctx					:	OpaquePointer
+	let			workQ				:	DispatchQueue
+	let			callbackQ			:	DispatchQueue
 }
 
 
