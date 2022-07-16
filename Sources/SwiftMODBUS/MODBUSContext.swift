@@ -141,6 +141,25 @@ MODBUSContext
 		}
 	}
 	
+	/**
+		The delay between setting/clearing RTS and transmitting bytes. µs
+	*/
+	
+	public
+	var
+	rtsDelay: Int
+	{
+		get
+		{
+			return Int(modbus_rtu_get_rts_delay(self.ctx))
+		}
+		
+		set(inVal)
+		{
+			modbus_rtu_set_rts_delay(self.ctx, Int32(inVal))
+		}
+	}
+	
 	//	MARK: - • Async Methods -
 	
 	/**
