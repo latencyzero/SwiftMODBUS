@@ -194,6 +194,32 @@ MODBUSContext
 	
 	public
 	func
+	readRegisters(fromDevice inDeviceID: Int, address inAddr: Int, count inCount: Int)
+		async
+		throws
+		-> [UInt16]
+	{
+		try await withCheckedThrowingContinuation
+		{ inCont in
+			self.workQ.async
+			{
+				do
+				{
+					self.deviceID = inDeviceID
+					let r: [UInt16] = try self.readRegisters(address: inAddr, count: inCount)
+					inCont.resume(returning: r)
+				}
+				
+				catch (let e)
+				{
+					inCont.resume(throwing: e)
+				}
+			}
+		}
+	}
+	
+	public
+	func
 	readRegister(fromDevice inDeviceID: Int, atAddress inAddr: Int)
 		async
 		throws
