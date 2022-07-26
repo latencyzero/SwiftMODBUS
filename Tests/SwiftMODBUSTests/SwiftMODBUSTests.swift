@@ -40,6 +40,33 @@ SwiftMODBUSTests: XCTestCase
 	}
 	
 	func
+	testAlicatFloatAsync()
+		async
+		throws
+	{
+		do
+		{
+			let ctx = try MODBUSContext(port: kPort, baud: 19200)
+			ctx.set(debug: true)
+			try ctx.setByteTimeout(seconds: 1.0)
+			try ctx.setResponseTimeout(seconds: 1.0)
+			try ctx.connect()
+			let v: Float = try await retry(3) { try await ctx.readRegister(fromDevice: 82, atAddress: 1211 - 1) }
+			print("Val: \(v)")
+		}
+		
+		catch (let e)
+		{
+			if case let MBError.unknown(err) = e
+			{
+				print("Errno: \(err)")
+			}
+			print("Err: \(e)")
+			throw e
+		}
+	}
+	
+	func
 	testAlicat()
 		throws
 	{

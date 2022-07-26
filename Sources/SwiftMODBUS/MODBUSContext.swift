@@ -1,4 +1,3 @@
-import libmodbus
 
 #if canImport(Darwin)
 import Darwin
@@ -7,6 +6,9 @@ import Glibc
 #endif
 
 import Foundation
+
+import libmodbus
+
 
 
 public
@@ -693,148 +695,3 @@ MODBUSContext.SerialMode
 		}
 	}
 }
-
-public
-enum
-MBError : Error
-{
-	case unknown(Int)
-	case deviceIDNotSet
-	case unexpectedReturnedRegisterCount(Int)
-	case timeout(Int, Int)							//	Device ID, MODBUS address
-	
-	//	libmodbus errors
-	
-	case invalidFunction
-	case invalidAddress(Int?)
-	case invalidValue(Int?, String?)
-	case serverFailure
-	case ack
-	case serverBusy
-	case nack
-	case memoryParity
-	case notDefined									//	???
-	case gatewayPathUnavailable
-	case noResponse
-	case invalidCRC
-	case invalidData
-	case invalidExeceptionCode
-	case unknownExeceptionCode
-	case dataOverflow								//	Too many bytes returned
-	case badServer									//	Response not from requested device
-	
-	
-	/**
-		Pass the address or formatted value to improve the error message context.
-	*/
-	
-	init(errno inErr: Int32, devID inDevID: Int, addr inAddr: Int? = nil, value inVal: String? = nil)
-	{
-		let kErrorBase = 112345678
-		switch inErr
-		{
-			case Int32(kErrorBase +  1):	self = .invalidFunction
-			case Int32(kErrorBase +  2):	self = .invalidAddress(inAddr)
-			case Int32(kErrorBase +  3):	self = .invalidValue(inAddr, inVal)
-			case Int32(kErrorBase +  4):	self = .serverFailure
-			case Int32(kErrorBase +  5):	self = .ack
-			case Int32(kErrorBase +  6):	self = .serverBusy
-			case Int32(kErrorBase +  7):	self = .nack
-			case Int32(kErrorBase +  8):	self = .memoryParity
-			case Int32(kErrorBase +  9):	self = .notDefined
-			case Int32(kErrorBase + 10):	self = .gatewayPathUnavailable
-			case Int32(kErrorBase + 11):	self = .noResponse
-			case Int32(kErrorBase + 12):	self = .invalidCRC
-			case Int32(kErrorBase + 13):	self = .invalidData
-			case Int32(kErrorBase + 14):	self = .invalidExeceptionCode
-			case Int32(kErrorBase + 15):	self = .unknownExeceptionCode
-			case Int32(kErrorBase + 16):	self = .dataOverflow
-			case Int32(kErrorBase + 17):	self = .badServer
-			
-			case Int32(ETIMEDOUT):			self = .timeout(inDevID, inAddr ?? 0)
-			
-			default:						self = .unknown(Int(inErr))
-		}
-	}
-}
-
-extension
-MBError : CustomDebugStringConvertible
-{
-	public
-	var
-	debugDescription: String
-	{
-		switch self
-		{
-			case .unknown(let ec):								return "Unknown libmodbus error (errno: \(ec))"
-			case .deviceIDNotSet:								return "Device ID not set"
-			case .unexpectedReturnedRegisterCount(let c):		return "Unexpected returned register count: \(c)"
-			case .timeout(let dev, let addr):					return "Timeout (dev/addr: \(dev)/\(addr))"			//	TODO: format?
-			
-			case .invalidFunction:								return "Invalid function"
-			case .invalidAddress(let a):						return "Invalid address \(String(describing: a))"
-			case .invalidValue(let a, let v):					return "Invalid value \(String(describing: a)) \(String(describing: v))"
-			case .serverFailure:								return "Server failure"
-			case .ack:											return "Acknowledged"
-			case .serverBusy:									return "Server busy"
-			case .nack:											return "Not acknowledged"
-			case .memoryParity:									return "Memory parity"
-			case .notDefined:									return "Error not defined"
-			case .gatewayPathUnavailable:						return "Gateway path unavailable"
-			case .noResponse:									return "No response"
-			
-			case .invalidCRC:									return "Invalid CRC"
-			case .invalidData:									return "Invalid data"
-			case .invalidExeceptionCode:						return "Invalid exception code"
-			case .unknownExeceptionCode:						return "Unknown exception code"
-			case .dataOverflow:									return "Data overflow"
-			case .badServer:									return "Response not from requested device"
-		}
-	}
-}
-
-func
-errDesc(_ inErr: Int)
-	-> String
-{
-	let s = String(validatingUTF8: modbus_strerror(Int32(inErr))) ?? "Unable to convert error string"
-	return s
-}
-
-//const char *modbus_strerror(int errnum) {
-//    switch (errnum) {
-//    case EMBXILFUN:
-//        return "Illegal function";
-//    case EMBXILADD:
-//        return "Illegal data address";
-//    case EMBXILVAL:
-//        return "Illegal data value";
-//    case EMBXSFAIL:
-//        return "Slave device or server failure";
-//    case EMBXACK:
-//        return "Acknowledge";
-//    case EMBXSBUSY:
-//        return "Slave device or server is busy";
-//    case EMBXNACK:
-//        return "Negative acknowledge";
-//    case EMBXMEMPAR:
-//        return "Memory parity error";
-//    case EMBXGPATH:
-//        return "Gateway path unavailable";
-//    case EMBXGTAR:
-//        return "Target device failed to respond";
-//    case EMBBADCRC:
-//        return "Invalid CRC";
-//    case EMBBADDATA:
-//        return "Invalid data";
-//    case EMBBADEXC:
-//        return "Invalid exception code";
-//    case EMBMDATA:
-//        return "Too many data";
-//    case EMBBADSLAVE:
-//        return "Response not from requested slave";
-//    default:
-//        return strerror(errnum);
-//    }
-//}
