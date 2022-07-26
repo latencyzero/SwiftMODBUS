@@ -24,7 +24,7 @@ MBError : Error
 	
 	case invalidFunction
 	case invalidAddress(Int?)
-	case invalidValue(Int?, String?)
+	case invalidValue(Int, Int?, String?)
 	case serverFailure
 	case ack
 	case serverBusy
@@ -52,7 +52,7 @@ MBError : Error
 		{
 			case Int32(kErrorBase +  1):	self = .invalidFunction
 			case Int32(kErrorBase +  2):	self = .invalidAddress(inAddr)
-			case Int32(kErrorBase +  3):	self = .invalidValue(inAddr, inVal)
+			case Int32(kErrorBase +  3):	self = .invalidValue(inDevID, inAddr, inVal)
 			case Int32(kErrorBase +  4):	self = .serverFailure
 			case Int32(kErrorBase +  5):	self = .ack
 			case Int32(kErrorBase +  6):	self = .serverBusy
@@ -92,7 +92,21 @@ MBError : CustomDebugStringConvertible
 			
 			case .invalidFunction:								s = "Invalid function"
 			case .invalidAddress(let a):						s = "Invalid address \(String(describing: a))"
-			case .invalidValue(let a, let v):					s = "Invalid value \(String(describing: a)) \(String(describing: v))"
+			case .invalidValue(let d, let a, let v):
+				if let a = a,
+					let v = v
+				{
+					s = "Invalid value \(d)/\(a): \(v)"
+				}
+				else if let a = a
+				{
+					s = "Invalid value \(d)/\(a)"
+				}
+				else
+				{
+					s = "Invalid value for device \(d)"
+				}
+			
 			case .serverFailure:								s = "Server failure"
 			case .ack:											s = "Acknowledged"
 			case .serverBusy:									s = "Server busy"
