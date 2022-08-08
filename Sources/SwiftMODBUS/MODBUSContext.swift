@@ -314,7 +314,7 @@ MODBUSContext
 	{
 		try await withCheckedThrowingContinuation
 		{ (inCont: CheckedContinuation<Void, Error>) -> Void in
-			self.workQ.async
+			self.workQ.asyncAfter(deadline: .now() + 0.002)
 			{
 				do
 				{
@@ -343,7 +343,7 @@ MODBUSContext
 	{
 		try await withCheckedThrowingContinuation
 		{ (inCont: CheckedContinuation<Void, Error>) -> Void in
-			self.workQ.async
+			self.workQ.asyncAfter(deadline: .now() + 0.002)
 			{
 				do
 				{
@@ -368,7 +368,7 @@ MODBUSContext
 	{
 		try await withCheckedThrowingContinuation
 		{ (inCont: CheckedContinuation<Void, Error>) -> Void in
-			self.workQ.async
+			self.workQ.asyncAfter(deadline: .now() + 0.002)
 			{
 				do
 				{
@@ -397,7 +397,7 @@ MODBUSContext
 	{
 		try await withCheckedThrowingContinuation
 		{ (inCont: CheckedContinuation<Void, Error>) -> Void in
-			self.workQ.async
+			self.workQ.asyncAfter(deadline: .now() + 0.002)
 			{
 				do
 				{
