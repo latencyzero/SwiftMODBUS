@@ -122,7 +122,6 @@ MBError : CustomDebugStringConvertible
 			case .unknownExeceptionCode:						s = "Unknown exception code"
 			case .dataOverflow:									s = "Data overflow"
 			case .badServer:									s = "Response not from requested device"
-			default:											s = "Unknown error"
 		}
 		
 		s = "SwiftMODBUS Error: \(s)"
