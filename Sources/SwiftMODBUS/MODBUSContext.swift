@@ -35,7 +35,7 @@ MODBUSContext
 	
 	public	var			customRTS				:	((MODBUSContext, Bool) -> Void)?
 	
-	
+	public	var			sendDelay				:	Double								=	0.005
 	
 	/**
 		Creates a MODBUS context representing a single bus connected to a system serial port.
@@ -177,7 +177,7 @@ MODBUSContext
 	{
 		try await withCheckedThrowingContinuation
 		{ inCont in
-			self.workQ.asyncAfter(deadline: .now() + 0.002)
+			self.workQ.asyncAfter(deadline: .now() + self.sendDelay)
 			{
 				do
 				{
@@ -203,7 +203,7 @@ MODBUSContext
 	{
 		try await withCheckedThrowingContinuation
 		{ inCont in
-			self.workQ.asyncAfter(deadline: .now() + 0.002)
+			self.workQ.asyncAfter(deadline: .now() + self.sendDelay)
 			{
 				do
 				{
@@ -229,7 +229,7 @@ MODBUSContext
 	{
 		try await withCheckedThrowingContinuation
 		{ inCont in
-			self.workQ.asyncAfter(deadline: .now() + 0.002)
+			self.workQ.asyncAfter(deadline: .now() + self.sendDelay)
 			{
 				do
 				{
@@ -255,7 +255,7 @@ MODBUSContext
 	{
 		try await withCheckedThrowingContinuation
 		{ inCont in
-			self.workQ.asyncAfter(deadline: .now() + 0.002)
+			self.workQ.asyncAfter(deadline: .now() + self.sendDelay)
 			{
 				do
 				{
@@ -285,7 +285,7 @@ MODBUSContext
 	{
 		try await withCheckedThrowingContinuation
 		{ inCont in
-			self.workQ.asyncAfter(deadline: .now() + 0.002)
+			self.workQ.asyncAfter(deadline: .now() + self.sendDelay)
 			{
 				do
 				{
@@ -314,7 +314,7 @@ MODBUSContext
 	{
 		try await withCheckedThrowingContinuation
 		{ (inCont: CheckedContinuation<Void, Error>) -> Void in
-			self.workQ.asyncAfter(deadline: .now() + 0.002)
+			self.workQ.asyncAfter(deadline: .now() + self.sendDelay)
 			{
 				do
 				{
@@ -343,7 +343,7 @@ MODBUSContext
 	{
 		try await withCheckedThrowingContinuation
 		{ (inCont: CheckedContinuation<Void, Error>) -> Void in
-			self.workQ.asyncAfter(deadline: .now() + 0.002)
+			self.workQ.asyncAfter(deadline: .now() + self.sendDelay)
 			{
 				do
 				{
@@ -368,7 +368,7 @@ MODBUSContext
 	{
 		try await withCheckedThrowingContinuation
 		{ (inCont: CheckedContinuation<Void, Error>) -> Void in
-			self.workQ.asyncAfter(deadline: .now() + 0.002)
+			self.workQ.asyncAfter(deadline: .now() + self.sendDelay)
 			{
 				do
 				{
@@ -397,7 +397,7 @@ MODBUSContext
 	{
 		try await withCheckedThrowingContinuation
 		{ (inCont: CheckedContinuation<Void, Error>) -> Void in
-			self.workQ.asyncAfter(deadline: .now() + 0.002)
+			self.workQ.asyncAfter(deadline: .now() + self.sendDelay)
 			{
 				do
 				{
