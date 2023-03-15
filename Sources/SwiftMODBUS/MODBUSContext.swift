@@ -33,7 +33,14 @@ MODBUSContext
 		case rs485			=	1
 	}
 	
-	public	var			customRTS				:	((MODBUSContext, Bool) -> Void)?
+	/**
+		Indicates whether or not a successful connection was established. Currently
+		does not reflect a situation in which the connection was dropped (e.g. the
+		USB-to-serial adapter was removed).
+	*/
+	
+	private(set) public	var			connected											=	false
+	
 	
 	public	var			sendDelay				:	Double								=	0.005
 	
@@ -52,8 +59,7 @@ MODBUSContext
 			parity inParity: Parity = .none,
 			wordSize inWordSize: Int = 8,
 			stopBits inStopBits: Int = 1,
-			queue inQueue: DispatchQueue = .main,
-			useCustomRTS inUseCustomRTS: Bool = false)
+			queue inQueue: DispatchQueue = .main)
 		throws
 	{
 		guard
@@ -68,24 +74,11 @@ MODBUSContext
 		self.callbackQ = inQueue
 		
 		modbus_set_client_context(self.ctx, Unmanaged.passRetained(self).toOpaque())
-		
-		if inUseCustomRTS
-		{
-			modbus_rtu_set_rts(self.ctx, Int32(RTSMode.rs485.rawValue))
-			modbus_rtu_set_custom_rts(self.ctx)
-			{ inCtxPtr, inOn in
-				let this: MODBUSContext? = Unmanaged.fromOpaque(modbus_get_client_context(inCtxPtr)).takeUnretainedValue()
-				
-				if let t = this
-				{
-					t.customRTS?(t, inOn != 0)
-				}
-			}
-		}
 	}
 	
 	deinit
 	{
+		close()
 		modbus_free(self.ctx)
 	}
 	
@@ -101,6 +94,33 @@ MODBUSContext
 	
 	public
 	func
+	setCustomSetRTS(_ inCallback: ((MODBUSContext, Bool) -> Void)?)
+	{
+		self.customRTS = inCallback
+		
+		if self.customRTS != nil
+		{
+			modbus_rtu_set_rts(self.ctx, Int32(RTSMode.rs485.rawValue))
+			modbus_rtu_set_custom_rts(self.ctx)
+			{ inCtxPtr, inOn in
+				let this: MODBUSContext? = Unmanaged.fromOpaque(modbus_get_client_context(inCtxPtr)).takeUnretainedValue()
+				
+				if let t = this
+				{
+					this?.customRTS?(t, inOn != 0)
+				}
+			}
+		}
+		else
+		{
+			modbus_rtu_set_custom_rts(self.ctx, nil)
+		}
+	}
+	
+	var			customRTS				:	((MODBUSContext, Bool) -> Void)?
+	
+	public
+	func
 	connect()
 		throws
 	{
@@ -111,6 +131,15 @@ MODBUSContext
 		{
 			throw MBError(errno: errno, devID: self.deviceID)
 		}
+		self.connected = true
+	}
+	
+	public
+	func
+	close()
+	{
+		modbus_close(self.ctx)
+		self.connected = false
 	}
 	
 	public
