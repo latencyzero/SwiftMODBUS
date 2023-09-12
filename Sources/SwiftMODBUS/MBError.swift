@@ -38,7 +38,7 @@ MBError : Error
 	case invalidExeceptionCode
 	case unknownExeceptionCode
 	case dataOverflow								//	Too many bytes returned
-	case badServer									//	Response not from requested device
+	case badServer(Int)								//	Response not from requested device
 	
 	
 	/**
@@ -66,7 +66,7 @@ MBError : Error
 			case Int32(kErrorBase + 14):	self = .invalidExeceptionCode
 			case Int32(kErrorBase + 15):	self = .unknownExeceptionCode
 			case Int32(kErrorBase + 16):	self = .dataOverflow
-			case Int32(kErrorBase + 17):	self = .badServer
+			case Int32(kErrorBase + 17):	self = .badServer(inDevID)
 			
 			case Int32(ETIMEDOUT):			self = .timeout(inDevID, inAddr ?? 0)
 			
@@ -121,7 +121,7 @@ MBError : CustomDebugStringConvertible
 			case .invalidExeceptionCode:						s = "Invalid exception code"
 			case .unknownExeceptionCode:						s = "Unknown exception code"
 			case .dataOverflow:									s = "Data overflow"
-			case .badServer:									s = "Response not from requested device"
+			case .badServer(let d):								s = "Response not from requested device \(d)"
 		}
 		
 		s = "SwiftMODBUS Error: \(s)"
