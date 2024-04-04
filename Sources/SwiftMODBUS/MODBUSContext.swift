@@ -39,10 +39,14 @@ MODBUSContext
 		USB-to-serial adapter was removed).
 	*/
 	
-	private(set) public	var			connected											=	false
+	private(set)	public	var	connected								=	false
 	
 	
-	public	var			sendDelay				:	Double								=	0.005
+					public	var	sendDelay			:	Double			=	0.005
+	
+					public	var	bytesWritten		:	Int				{ get async { self._bytesWritten } }
+					public	var	bytesRead			:	Int				{ get async { self._bytesRead } }
+	
 	
 	/**
 		Creates a MODBUS context representing a single bus connected to a system serial port.
@@ -74,6 +78,33 @@ MODBUSContext
 		self.callbackQ = inQueue
 		
 		modbus_set_client_context(self.ctx, Unmanaged.passRetained(self).toOpaque())
+	}
+	
+	public
+	init(ip inIP: String,
+			port inPort: Int,
+			queue inQueue: DispatchQueue = .main)
+		throws
+	{
+		guard
+			let ctx = modbus_new_tcp(inIP, Int32(inPort))
+		else
+		{
+			throw MBError(errno: errno, devID: 0)
+		}
+		
+		self.ctx = ctx
+		self.workQ = DispatchQueue(label: "Modbus \(inPort)", qos: .userInitiated)
+		self.callbackQ = inQueue
+		
+		modbus_set_client_context(self.ctx, Unmanaged.passRetained(self).toOpaque())
+		
+		//	Setting this allows the TCP connection to recover if it times out
+		//	and responses start coming in out of sync…
+		//	TODO: Experiment with LINK recovery as well to see if that will allow
+		//	it to reconnect to a missing bridge…
+		
+		modbus_set_error_recovery(self.ctx, MODBUS_ERROR_RECOVERY_PROTOCOL)
 	}
 	
 	deinit
@@ -529,6 +560,14 @@ MODBUSContext
 		{
 			throw MBError.unexpectedReturnedRegisterCount(Int(rc))
 		}
+		
+		self._bytesWritten +=	4			//	Read packet overhead
+							+	4			//	Read registers function (starting address, count)
+							
+		self._bytesRead += MemoryLayout.size(ofValue: v)
+							+	4			//	Response packet overhead
+							+	1			//	Response data length
+		
 		return v
 	}
 	
@@ -592,6 +631,12 @@ MODBUSContext
 		{
 			throw MBError.unexpectedReturnedRegisterCount(Int(rc))
 		}
+		self._bytesWritten +=	4			//	Read packet overhead
+							+	4			//	Read registers function (starting address, count)
+							
+		self._bytesRead += inCount * MemoryLayout.size(ofValue: v)
+							+	4			//	Response packet overhead
+							+	1			//	Response data length
 		return v
 	}
 	
@@ -626,6 +671,13 @@ MODBUSContext
 		{
 			throw MBError(errno: errno, devID: self.deviceID, addr: inAddr, value: String(describing: inVals))
 		}
+		self._bytesWritten +=	4									//	Write packet overhead
+							+	4									//	Write registers function (starting address, count)
+							+	1									//	Byte count of data
+							+	MemoryLayout.size(ofValue: vals)	//	Size of register data
+							
+		self._bytesRead += 		4			//	Response packet overhead
+							+	4			//	Written registers (starting address, count)
 	}
 	
 	func
@@ -689,9 +741,24 @@ MODBUSContext
 		}
 	}
 	
+	public
+	func
+	resetCounters()
+		async
+	{
+		self._bytesWritten = 0
+		self._bytesRead = 0
+	}
+	
+//	public
+//	func
+//	getBytesWritten
+	
 	let			ctx					:	OpaquePointer
 	let			workQ				:	DispatchQueue
 	let			callbackQ			:	DispatchQueue
+	var			_bytesWritten		:	Int									=	0
+	var			_bytesRead			:	Int		 							=	0
 }
 
 
