@@ -669,7 +669,15 @@ MODBUSContext
 		let rc = modbus_write_registers(self.ctx, Int32(inAddr), Int32(inVals.count), &vals)
 		if rc != vals.count
 		{
-			throw MBError(errno: errno, devID: self.deviceID, addr: inAddr, value: String(describing: inVals))
+			let decimalValues = inVals
+									.map { "\($0)" }
+									.joined(separator: ",")
+			let hexValues = inVals
+								.map { String(format: "0x%04x", $0) }
+								.joined(separator: ",")
+			
+			let vals = "[\(decimalValues)], [\(hexValues)]"
+			throw MBError(errno: errno, devID: self.deviceID, addr: inAddr, value: vals)
 		}
 		self._bytesWritten +=	4									//	Write packet overhead
 							+	4									//	Write registers function (starting address, count)
