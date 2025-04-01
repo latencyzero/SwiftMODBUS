@@ -39,7 +39,7 @@ MBError : Error
 	case unknownExeceptionCode
 	case dataOverflow								//	Too many bytes returned
 	case badServer(Int)								//	Response not from requested device
-	
+	case unableToResolveHost(String)
 	
 	/**
 		Pass the address or formatted value to improve the error message context.
@@ -122,6 +122,7 @@ MBError : CustomDebugStringConvertible
 			case .unknownExeceptionCode:						s = "Unknown exception code"
 			case .dataOverflow:									s = "Data overflow"
 			case .badServer(let d):								s = "Response not from requested device \(d)"
+			case .unableToResolveHost(let h):					s = "Unable to resolve hostname \(h)"
 		}
 		
 		s = "SwiftMODBUS Error: \(s)"

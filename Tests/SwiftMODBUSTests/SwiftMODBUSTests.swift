@@ -1,6 +1,8 @@
 import XCTest
 @testable import SwiftMODBUS
 
+import AsyncDNSResolver
+
 
 //fileprivate let	kPort				=	"/dev/tty.usbserial-AO004DTP"
 //fileprivate let	kPort				=	"/dev/tty.usbserial-AK05M8LO"
@@ -351,6 +353,24 @@ SwiftMODBUSTests: XCTestCase
 		}
 		
 		wait(for: [exp], timeout: 10)
+	}
+
+	func
+	testIPValidation()
+	{
+		XCTAssert(validateIPAddress(ipToValidate: "1.2.3.4"))
+		XCTAssertFalse(validateIPAddress(ipToValidate: "1.2.3.4.6"))
+		XCTAssertFalse(validateIPAddress(ipToValidate: "1:2"))
+	}
+	
+	func
+	testDNS()
+		async
+		throws
+	{
+		let resolver = try AsyncDNSResolver()
+		let aRecords = try await resolver.queryA(name: "1.2.3.4")
+		print(aRecords)
 	}
 }
 

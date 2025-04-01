@@ -6,19 +6,24 @@ import PackageDescription
 let package = Package(
 	name: "SwiftMODBUS",
 	platforms: [ .macOS(.v12), .iOS(.v15) ],
-	products: [
+	products:
+	[
 		.library(
 			name: "SwiftMODBUS",
 			targets: ["SwiftMODBUS"]),
 	],
-	dependencies: [
+	dependencies:
+	[
+		.package(url: "https://github.com/apple/swift-async-dns-resolver.git",			from: "0.1.0"),
 	],
-	targets: [
+	targets:
+	[
 		.systemLibrary(name: "libmodbus", pkgConfig: "libmodbus", providers: [.brew(["libmodbus"]), .apt(["libmodbus-dev"])]),
 		.target(
 			name: "SwiftMODBUS",
 			dependencies: [
 				"libmodbus",
+				.product(name: "AsyncDNSResolver",		package: "swift-async-dns-resolver"),
 			]),
 		.testTarget(
 			name: "SwiftMODBUSTests",

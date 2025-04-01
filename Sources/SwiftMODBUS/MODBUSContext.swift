@@ -7,6 +7,8 @@ import Glibc
 
 import Foundation
 
+import AsyncDNSResolver
+
 import libmodbus
 
 
@@ -81,13 +83,39 @@ MODBUSContext
 	}
 	
 	public
-	init(ip inIP: String,
-			port inPort: Int,
+	init(host inHostnameOrIP: String,
+			port inPort: Int? = nil,
 			queue inQueue: DispatchQueue = .main)
+		async
 		throws
 	{
+		//	Resolve the supplied hostname to an IP address…
+		
+		var ipAddress: String?
+		if validate(ipAddress: inHostnameOrIP)
+		{
+			ipAddress = inHostnameOrIP
+		}
+		else
+		{
+			let resolver = try AsyncDNSResolver()
+			let aRecords = try await resolver.queryA(name: inHostnameOrIP)
+			ipAddress = aRecords.first?.address.address
+		}
+		
 		guard
-			let ctx = modbus_new_tcp(inIP, Int32(inPort))
+			let ipAddress
+		else
+		{
+			throw MBError.unableToResolveHost(inHostnameOrIP)
+		}
+		
+		let port = inPort ?? 502
+		
+		//	Create the context…
+		
+		guard
+			let ctx = modbus_new_tcp(ipAddress, Int32(port))
 		else
 		{
 			throw MBError(errno: errno, devID: 0)
@@ -798,4 +826,31 @@ MODBUSContext.SerialMode
 			case .unknown:		return 0
 		}
 	}
+}
+
+/**
+	Validate the supplied string as an IP address (IPv4 or v6).
+	
+	From: https://stackoverflow.com/a/37071903/251914
+*/
+
+func
+validate(ipAddress inAddr: String)
+	-> Bool
+{
+	var sin = sockaddr_in()
+	var sin6 = sockaddr_in6()
+
+	if inAddr.withCString({ cstring in inet_pton(AF_INET6, cstring, &sin6.sin6_addr) }) == 1
+	{
+		// IPv6 peer.
+		return true
+	}
+	else if inAddr.withCString({ cstring in inet_pton(AF_INET, cstring, &sin.sin_addr) }) == 1
+	{
+		// IPv4 peer.
+		return true
+	}
+
+	return false
 }

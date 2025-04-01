@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "swift-async-dns-resolver",
+        "repositoryURL": "https://github.com/apple/swift-async-dns-resolver.git",
+        "state": {
+          "branch": null,
+          "revision": "08c07ff31a745ee5e522ac10132fb4949834d925",
+          "version": "0.4.0"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
