@@ -122,7 +122,7 @@ MODBUSContext
 		}
 		
 		self.ctx = ctx
-		self.workQ = DispatchQueue(label: "Modbus \(inPort)", qos: .userInitiated)
+		self.workQ = DispatchQueue(label: "Modbus \(port)", qos: .userInitiated)
 		self.callbackQ = inQueue
 		
 		modbus_set_client_context(self.ctx, Unmanaged.passRetained(self).toOpaque())
@@ -197,7 +197,7 @@ MODBUSContext
 		if sockfd >= 0
 		{
 			var flag: Int32 = 1
-			let result = setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &flag, socklen_t(MemoryLayout.size(ofValue: flag)))
+			let result = setsockopt(sockfd, Int32(IPPROTO_TCP), Int32(TCP_NODELAY), &flag, socklen_t(MemoryLayout.size(ofValue: flag)))
 			if (result < 0)
 			{
 				print("setsockopt TCP_NODELAY error: \(result)");
