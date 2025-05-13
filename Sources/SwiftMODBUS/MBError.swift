@@ -130,6 +130,18 @@ MBError : CustomDebugStringConvertible
 	}
 }
 
+extension
+MBError : LocalizedError
+{
+	public
+	var
+	errorDescription: String?
+	{
+		return self.debugDescription
+	}
+}
+
+
 func
 errDesc(_ inErr: Int)
 	-> String

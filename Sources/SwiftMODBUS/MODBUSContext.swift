@@ -111,7 +111,7 @@ MODBUSContext
 		}
 		
 		let port = inPort ?? 502
-		
+		print("MODBUSContext: \(ipAddress):\(port)")
 		//	Create the context…
 		
 		guard
@@ -132,7 +132,7 @@ MODBUSContext
 		//	TODO: Experiment with LINK recovery as well to see if that will allow
 		//	it to reconnect to a missing bridge…
 		
-		modbus_set_error_recovery(self.ctx, MODBUS_ERROR_RECOVERY_PROTOCOL)
+		modbus_set_error_recovery(self.ctx, modbus_error_recovery_mode(rawValue: MODBUS_ERROR_RECOVERY_PROTOCOL.rawValue | MODBUS_ERROR_RECOVERY_LINK.rawValue))
 	}
 	
 	deinit
@@ -190,6 +190,24 @@ MODBUSContext
 		{
 			throw MBError(errno: errno, devID: self.deviceID)
 		}
+		
+		//	Set nodelay…
+		
+		let sockfd = modbus_get_socket(self.ctx)
+		if sockfd >= 0
+		{
+			var flag: Int32 = 1
+			let result = setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &flag, socklen_t(MemoryLayout.size(ofValue: flag)))
+			if (result < 0)
+			{
+				print("setsockopt TCP_NODELAY error: \(result)");
+			}
+			else
+			{
+				print("TCP_NODELAY set successfully");
+			}
+		}
+		
 		self.connected = true
 	}
 	
@@ -566,38 +584,7 @@ MODBUSContext
 		}
 	}
 	
-	func
-	readRegister(address inAddr: Int)
-		throws
-		-> UInt16
-	{
-//		print("readRegister(address: \(self.deviceID)/\(inAddr)) -> UInt16")
-		
-		if self.deviceID == -1
-		{
-			throw MBError.deviceIDNotSet
-		}
-		
-		var v: UInt16 = 0
-		let rc = modbus_read_registers(self.ctx, Int32(inAddr), 1, &v)
-		if rc == -1
-		{
-			throw MBError(errno: errno, devID: self.deviceID, addr: inAddr)
-		}
-		else if rc != 1
-		{
-			throw MBError.unexpectedReturnedRegisterCount(Int(rc))
-		}
-		
-		self._bytesWritten +=	4			//	Read packet overhead
-							+	4			//	Read registers function (starting address, count)
-							
-		self._bytesRead += MemoryLayout.size(ofValue: v)
-							+	4			//	Response packet overhead
-							+	1			//	Response data length
-		
-		return v
-	}
+//	MARK: - • Sync Methods -
 	
 	func
 	readRegister(address inAddr: Int)
@@ -638,6 +625,79 @@ MODBUSContext
 	}
 	
 	func
+	read(address inAddr: Int)
+		throws
+		-> Float
+	{
+//		print("read(address: \(self.deviceID)/\(inAddr)) -> Float")
+		
+		if self.deviceID == -1
+		{
+			throw MBError.deviceIDNotSet
+		}
+		
+		let vals = try readRegisters(address: inAddr, count: 2)
+		let high = vals[0]
+		let low = vals[1]
+//		print("high: \(String(format: "0x%04x", high)), low: \(String(format: "0x%04x", low))")
+		let word = UInt32(high) << 16 | UInt32(low)
+		let r = Float(bitPattern: word)
+		return r
+	}
+	
+	func
+	write(address inAddr: Int, value inVal: Float)
+		throws
+	{
+		let bits = inVal.bitPattern
+		let word: [UInt16] = [ UInt16(bits >> 16 & 0xFFFF), UInt16(bits & 0xFFFF) ]
+		try write(address: inAddr, values: word)
+	}
+	
+	func
+	write(address inAddr: Int, value inVal: Int32)
+		throws
+	{
+		let word: [UInt16] = [ UInt16(inVal >> 16 & 0xFFFF), UInt16(inVal & 0xFFFF) ]
+		try write(address: inAddr, values: word)
+	}
+	
+//	MARK: - • Low-level Wrappers -
+
+	func
+	readRegister(address inAddr: Int)
+		throws
+		-> UInt16
+	{
+//		print("readRegister(address: \(self.deviceID)/\(inAddr)) -> UInt16")
+		
+		if self.deviceID == -1
+		{
+			throw MBError.deviceIDNotSet
+		}
+		
+		var v: UInt16 = 0
+		let rc = modbus_read_registers(self.ctx, Int32(inAddr), 1, &v)
+		if rc == -1
+		{
+			throw MBError(errno: errno, devID: self.deviceID, addr: inAddr)
+		}
+		else if rc != 1
+		{
+			throw MBError.unexpectedReturnedRegisterCount(Int(rc))
+		}
+		
+		self._bytesWritten +=	4			//	Read packet overhead
+							+	4			//	Read registers function (starting address, count)
+							
+		self._bytesRead += MemoryLayout.size(ofValue: v)
+							+	4			//	Response packet overhead
+							+	1			//	Response data length
+		
+		return v
+	}
+	
+	func
 	readRegisters(address inAddr: Int, count inCount: Int)
 		throws
 		-> [UInt16]
@@ -669,27 +729,6 @@ MODBUSContext
 	}
 	
 	func
-	read(address inAddr: Int)
-		throws
-		-> Float
-	{
-//		print("read(address: \(self.deviceID)/\(inAddr)) -> Float")
-		
-		if self.deviceID == -1
-		{
-			throw MBError.deviceIDNotSet
-		}
-		
-		let vals = try readRegisters(address: inAddr, count: 2)
-		let high = vals[0]
-		let low = vals[1]
-//		print("high: \(String(format: "0x%04x", high)), low: \(String(format: "0x%04x", low))")
-		let word = UInt32(high) << 16 | UInt32(low)
-		let r = Float(bitPattern: word)
-		return r
-	}
-	
-	func
 	write(address inAddr: Int, values inVals: [UInt16])
 		throws
 	{
@@ -714,23 +753,6 @@ MODBUSContext
 							
 		self._bytesRead += 		4			//	Response packet overhead
 							+	4			//	Written registers (starting address, count)
-	}
-	
-	func
-	write(address inAddr: Int, value inVal: Float)
-		throws
-	{
-		let bits = inVal.bitPattern
-		let word: [UInt16] = [ UInt16(bits >> 16 & 0xFFFF), UInt16(bits & 0xFFFF) ]
-		try write(address: inAddr, values: word)
-	}
-	
-	func
-	write(address inAddr: Int, value inVal: Int32)
-		throws
-	{
-		let word: [UInt16] = [ UInt16(inVal >> 16 & 0xFFFF), UInt16(inVal & 0xFFFF) ]
-		try write(address: inAddr, values: word)
 	}
 	
 	var
@@ -777,6 +799,8 @@ MODBUSContext
 		}
 	}
 	
+//	MARK: -
+
 	public
 	func
 	resetCounters()
